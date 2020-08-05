@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.fox2code.fabriczero.mixins",
+  "compatibilityLevel": "JAVA_8",
+  "plugin": "com.fox2code.fabriczero.FabricZeroPlugin",
+  "mixins": [
+  ],
+  "client": [
+    "I18nMixin",
+    "LanguageManagerMixin",
+    "ModUpdaterScreenMixin_ModUpdater"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

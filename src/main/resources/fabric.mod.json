@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "id": "fabriczero",
+  "version": "${version}",
+  "name": "Fabric Zero",
+  "description": "Compatibility and performance enhancement mod",
+  "authors": [
+    "Fox2Code"
+  ],
+  "contact": {
+    "issues": "https://github.com/Fox2Code/FabricZero/issues",
+    "sources": "https://github.com/Fox2Code/FabricZero"
+  },
+  "license": "MIT",
+  "icon": "assets/fabriczero/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "client": [
+      "com.fox2code.fabriczero.mod.FabricZeroClient"
+    ],
+    "main": [
+      "com.fox2code.fabriczero.mod.FabricZero"
+    ],
+    "modmenu": [
+      "com.fox2code.fabriczero.mod.FabricZeroModMenu"
+    ],
+    "modupdater": [
+      "com.fox2code.fabriczero.mod.FabricZeroModUpdater"
+    ]
+  },
+  "mixins": [
+    "fabriczero.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.7.0"
+  },
+  "suggests": {
+    "modupdater": "*"
+  },
+  "custom": {
+    "modupdater": {
+      "strategy": "github",
+      "owner": "Fox2Code",
+      "repository": "FabricZero",
+      "strict": false
+    }
+  }
+}
