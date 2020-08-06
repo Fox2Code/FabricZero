@@ -21,6 +21,7 @@ import org.spongepowered.asm.transformers.MixinClassWriter;
 import org.spongepowered.asm.transformers.TreeTransformer;
 
 import java.io.*;
+import java.lang.management.ManagementFactory;
 import java.nio.file.Files;
 import java.util.*;
 
@@ -41,6 +42,8 @@ public final class ImplFabricZeroAPI implements FabricZeroAPI, Opcodes {
         }
     };
     static final EnvType ENV_TYPE = FabricLauncherBase.getLauncher().getEnvironmentType();
+    static final boolean VERIFY_NONE =
+            ManagementFactory.getRuntimeMXBean().getInputArguments().contains("-Xverify:none");
     private final Map<String, List<String>> hidingRules = new HashMap<>();
     private final List<FabricZeroTransformer> transformers = new LinkedList<>();
     private File configFile;
@@ -116,7 +119,12 @@ public final class ImplFabricZeroAPI implements FabricZeroAPI, Opcodes {
         // Do not recalculate frames on unmodified classes to improve performances
         byte[] classBytes;
         ClassWriter classWriter;
-        if ((classNode.access & FLAG_DIRTY) != 0) {
+        if (VERIFY_NONE) {
+            classNode.access &=~ FLAG_DIRTY;
+            // We always parse COMPUTE_MAXS when VERIFY_NONE is enabled to partially replace VM verification
+            // In a no-verify env ClassWriter.COMPUTE_FRAMES are not necessary
+            classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_MAXS);
+        } else if ((classNode.access & FLAG_DIRTY) != 0) {
             classNode.access &=~ FLAG_DIRTY;
             classWriter = new MixinClassWriter(classReader, ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         } else {

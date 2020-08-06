@@ -39,7 +39,7 @@
   },
   "custom": {
     "modupdater": {
-      "strategy": "github",
+      "strategy": "curseforge",
       "owner": "Fox2Code",
       "repository": "FabricZero",
       "strict": false

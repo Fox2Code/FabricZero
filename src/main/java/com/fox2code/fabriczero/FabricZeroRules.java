@@ -11,7 +11,7 @@ import java.io.File;
  * Note: FabricZero can hide itself by putting "fabriczero" as mod id
  */
 class FabricZeroRules {
-    static void builtIn() throws ReflectiveOperationException {
+    static void builtIn() {
         FabricZeroAPI api = FabricZeroAPI.getInstance();
         api.hideMod("optifabric", "me.shedaniel.rei.impl.");
         api.addCurseProjectId("adorn", 320215);
@@ -68,7 +68,5 @@ class FabricZeroRules {
         api.addCurseProjectId("waila", 253449); // Hwyla
         api.addCurseProjectId("wolveswitharmor", 375969);
         api.addCurseProjectId("worldtooltips", 387568);
-        ReflectUtil.stabilizeClass(File.class);
-        ReflectUtil.stabilizeClass(Gson.class);
     }
 }

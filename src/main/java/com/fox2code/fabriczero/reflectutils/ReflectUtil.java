@@ -194,37 +194,6 @@ public class ReflectUtil {
         return null;
     }
 
-    private static Field Field_overrideFieldAccessor;
-    private static Method Field_getFieldAccessor;
-    private static Field Field_root;
-
-    public static void stabilizeField(Field field) throws ReflectiveOperationException {
-        if (Field_root == null) {
-            Field_root = Field.class.getDeclaredField("root");
-        }
-        field = (Field) forceGet(field, Field_root);
-        Java9Fix.setAccessible(field);
-        if ((field.getModifiers() & Modifier.FINAL) != 0) {
-            if (Field_overrideFieldAccessor == null || Field_getFieldAccessor == null) {
-                Field_overrideFieldAccessor = Field.class.getDeclaredField("overrideFieldAccessor");
-                Java9Fix.setAccessible(Field_overrideFieldAccessor);
-                Field_getFieldAccessor = Field.class.getDeclaredMethod("getFieldAccessor", Object.class);
-                Java9Fix.setAccessible(Field_getFieldAccessor);
-            }
-            forceSet(field, Field_overrideFieldAccessor,
-                    Java9Fix.asROFieldAccessor(Field_getFieldAccessor.invoke(field, (Object) null)));
-        }
-    }
-
-    public static void stabilizeClass(Class<?> cls) throws ReflectiveOperationException {
-        for (Field field:cls.getDeclaredFields()) {
-            int mod = field.getModifiers();
-            if (Modifier.isStatic(mod) && Modifier.isFinal(mod) && Modifier.isPublic(mod)) {
-                stabilizeField(field);
-            }
-        }
-    }
-
     /* private static Constructor<MethodHandles.Lookup> ctx;
     private static final MethodType lambda = MethodType.methodType(Runnable.class, String[].class);
     private static final MethodType main = MethodType.methodType(void.class, String[].class);

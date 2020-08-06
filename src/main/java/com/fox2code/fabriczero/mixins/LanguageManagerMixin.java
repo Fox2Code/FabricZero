@@ -61,7 +61,11 @@ public class LanguageManagerMixin {
             list.add(this.field_25292);
         }
         TranslationStorage translationStorage = TranslationStorage.load(manager, list);
-        I18nMixin.method_29391(translationStorage);
+        try {
+            I18nMixin.method_29391(translationStorage);
+        } catch (Throwable t) {
+            I18nMixin.field_25290(translationStorage);
+        }
         Language.setInstance(translationStorage);
         System.gc(); // Memory Opt (This method is run just after resources reloading)
     }

@@ -2,7 +2,6 @@ package com.fox2code.fabriczero.impl;
 
 import com.fox2code.fabriczero.api.FabricZeroAPI;
 import com.fox2code.fabriczero.reflectutils.ReflectUtil;
-import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.FabricLoader;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
@@ -10,7 +9,6 @@ import org.objectweb.asm.tree.*;
 
 import java.io.File;
 import java.lang.reflect.Field;
-import java.nio.file.Path;
 
 final class BytecodeOptimizer implements Opcodes {
     static Field opcodeField;

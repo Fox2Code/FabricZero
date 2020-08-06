@@ -5,6 +5,11 @@ Compatibility and performance enhancement mod
 
 ## Features
 
+- Disable Java9+ reflections restrictions.  
+  Some mods are now compatible with Java9+ because some mods use reflection
+  and fail to boot because of these restrictions.
+  FabricZero require `-Xverify:none` to launch on Java9+
+
 - Fix crash with many mods.  
   Note: This mod does patches that can help any mod to be compatible but do not guarantee a 100%
   success I can't make a list of what this mod fix or not 
@@ -42,6 +47,8 @@ Compatibility and performance enhancement mod
    [OptiFabric](https://www.curseforge.com/minecraft/mc-mods/optifabric)  
    Note: Sodium and OptiFabric **are still incompatible** since they modify the same part of the game code
 
+- Q: How this mod is clientside only?  
+  A: This mod is both client side and server side
 
 - Q: How this mod optimizes bytecode?  
 A: The mod has multiple bytecode optimizations for multiples this to optimize:

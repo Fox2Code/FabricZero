@@ -3,8 +3,8 @@ package com.fox2code.fabriczero.reflectutils;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Map;
 
-@SuppressWarnings("JavaReflectionMemberAccess")
 final class Java9Fix {
     private static final boolean java8 = System.getProperty("java.version").startsWith("1.");
     private static final Object unsafe;
@@ -19,8 +19,25 @@ final class Java9Fix {
     private static long moduleDescOffset;
     private static long moduleDescOpenOffset;
     static boolean internalUnsafe;
+    static boolean fallBackMode;
+    static boolean useHax;
+
+    private static Field access;
+    private static long accessOffset;
 
     static {
+        try {
+            SetAccessibleHax.test();
+            useHax = true;
+        } catch (Throwable ignored) {}
+        try { // Try this once to see if we can do it sooner
+            Class<?> cl = Class.forName("jdk.internal.reflect.Reflection");
+            Field field = getFieldBypass(cl, "fieldFilterMap");
+            setAccessibleHelper(field);
+            if (field != null) {
+                ((Map<?, ?>) field.get(null)).clear();
+            }
+        } catch (Throwable ignored) {}
         Class<?> unsafeClass;
         try {
             try {
@@ -30,8 +47,29 @@ final class Java9Fix {
                 unsafeClass = Class.forName("sun.misc.Unsafe");
             }
             Field field = unsafeClass.getDeclaredField("theUnsafe");
-            field.setAccessible(true);
-            unsafe = field.get(null);
+            Object _unsafe;
+            try {
+                try {
+                    setAccessibleHelper(field);
+                } catch (Exception e) {
+                    try {
+                        access = AccessibleObject.class.getDeclaredField("override");
+                    } catch (Exception e1) {
+                        access = getFieldBypass(AccessibleObject.class, "override");
+                    }
+                    setAccessibleHelper(access);
+                    access.setBoolean(field, true);
+                }
+            } catch (Exception e) {
+                try {
+                    SetAccessibleHax.setAccessible(field);
+                    useHax = true;
+                } catch (VerifyError verifyError) {
+                    AutoFixer.plzFixme();
+                }
+            }
+            _unsafe = field.get(null);
+            unsafe = _unsafe;
             fieldOffset = unsafeClass.getDeclaredMethod("objectFieldOffset", Field.class);
             fieldOffset2 = unsafeClass.getDeclaredMethod("staticFieldOffset", Field.class);
             staticFieldBase = unsafeClass.getDeclaredMethod("staticFieldBase", Field.class);
@@ -39,17 +77,40 @@ final class Java9Fix {
             fieldPutBool = unsafeClass.getDeclaredMethod("putBoolean", Object.class, long.class, boolean.class);
             fieldPutInt = unsafeClass.getDeclaredMethod("putInt", Object.class, long.class, int.class);
             fieldPutObject = unsafeClass.getDeclaredMethod("putObject", Object.class, long.class, Object.class);
+            try {
+                setAccessibleHelper(fieldOffset);
+                setAccessibleHelper(fieldOffset2);
+                setAccessibleHelper(staticFieldBase);
+                setAccessibleHelper(allocateInstance);
+                setAccessibleHelper(fieldPutBool);
+                setAccessibleHelper(fieldPutInt);
+                setAccessibleHelper(fieldPutObject);
+            } catch (ReflectiveOperationException reflectiveOperationException) {
+                if (!useHax) {
+                    AutoFixer.plzFixme();
+                }
+            }
         } catch (ReflectiveOperationException e) {
-            throw new Error(e);
+            throw new Error("Your JVM May be incompatible with FabricZero", e);
         }
         if (!java8) /* try */ {
             try {
+                Class<?> cl = Class.forName("jdk.internal.reflect.Reflection");
+                Field field = getFieldBypass(cl, "fieldFilterMap");
+                setAccessibleHelper(field);
+                if (field != null) {
+                    ((Map<?, ?>) field.get(null)).clear();
+                }
+            } catch (Exception e) {
+                System.out.println("[Java9Fix]: Unable to disable reflections blocker");
+            }
+            try {
                 //Disable Java9+ Reflection Warnings
                 Method putObjectVolatile = unsafeClass.getDeclaredMethod("putObjectVolatile", Object.class, long.class, Object.class);
-                Method staticFieldOffset = unsafeClass.getDeclaredMethod("staticFieldOffset", Field.class);
+                setAccessible(putObjectVolatile);
                 Class<?> loggerClass = Class.forName("jdk.internal.module.IllegalAccessLogger");
                 Field loggerField = loggerClass.getDeclaredField("logger");
-                Long offset = (Long) staticFieldOffset.invoke(unsafe, loggerField);
+                Long offset = (Long) fieldOffset2.invoke(unsafe, loggerField);
                 putObjectVolatile.invoke(unsafe, loggerClass, offset, null);
             } catch (ReflectiveOperationException ignored) {
                 System.out.println("[Java9Fix]: Unable to disable invalid access logging");
@@ -62,20 +123,63 @@ final class Java9Fix {
                 moduleDescOpenOffset = (Long) fieldOffset.invoke(unsafe, desc.getDeclaredField("open"));
                 fieldGetObject = unsafeClass.getDeclaredMethod("getObject", Object.class, long.class);
                 openModule(Class.class);
+                openModule(unsafeClass);
             } catch (ReflectiveOperationException ignored) {
                 System.out.println("[Java9Fix]: Unable to disable reflections checks");
             }
         }
+        if (fallBackMode) try {
+            fallBackMode = false;
+            access = null;
+            setAccessible(fieldOffset);
+        } catch (Throwable ignored) {}
     }
 
-    private static Field access;
-    private static long accessOffset;
+    private static Field getFieldBypass(Class<?> cls,String fieldName) throws ReflectiveOperationException {
+        Field[] fields;
+        try {
+            Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
+            setAccessibleHelper(getDeclaredFields0);
+            fields = (Field[]) getDeclaredFields0.invoke(cls, false);
+        } catch (NoSuchMethodException e) {
+            Method getDeclaredFieldsImpl = Class.class.getDeclaredMethod("getDeclaredFieldsImpl");
+            setAccessibleHelper(getDeclaredFieldsImpl);
+            fields = (Field[]) getDeclaredFieldsImpl.invoke(cls);
+        }
+        for (Field field:fields) {
+            if (field.getName().equals(fieldName)) {
+                return field;
+            }
+        }
+        return null;
+    }
+
+    private static void setAccessibleHelper(AccessibleObject field) throws ReflectiveOperationException {
+        if (useHax) {
+            SetAccessibleHax.setAccessible(field);
+            return;
+        }
+        try {
+            field.setAccessible(true);
+        } catch (Exception e) {
+            Method.class.getMethod("invoke", Object.class, Object[].class).invoke(
+                    Field.class.getMethod("setAccessible", boolean.class), field, new Object[]{true});
+        }
+    }
 
     public static void setAccessible(AccessibleObject field) throws ReflectiveOperationException {
-        if (access == null) {
+        if (fallBackMode) {
+            setAccessibleHelper(field);
+            return;
+        }
+        if (access == null) try {
             access = AccessibleObject.class.getDeclaredField("override");
             accessOffset = (Long) fieldOffset.invoke(unsafe, access);
             fieldPutBool.invoke(unsafe, access, accessOffset, true);
+        } catch (Exception e) {
+            fallBackMode = true;
+            setAccessibleHelper(field);
+            return;
         }
         fieldPutBool.invoke(unsafe, field, accessOffset, true);
     }
@@ -106,10 +210,6 @@ final class Java9Fix {
             tmp = fieldGetObject.invoke(unsafe, tmp, moduleDescOffset);
             fieldPutBool.invoke(unsafe, tmp, moduleDescOpenOffset, true);
         }
-    }
-
-    public static Object asROFieldAccessor(Object fieldAccessor)  {
-        return java8 ? ROFieldAccessor8.from(fieldAccessor) : ROFieldAccessor9.from(fieldAccessor);
     }
 
     static boolean isJava8() {
