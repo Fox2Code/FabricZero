@@ -44,9 +44,8 @@ final class UpdateAll {
                     int current = 1;
                     for (ModUpdate modUpdate:modUpdates) {
                         String modId = getModId(modUpdate.text);
-                        //noinspection OptionalGetWithoutIsPresent because we know the mod exists
                         File origFile = new File(
-                                ((ModContainer)FabricLoader.getInstance().getModContainer(modId).get())
+                                ((ModContainer)FabricLoader.getInstance().getModContainer(modId).orElseThrow(NullPointerException::new))
                                         .getOriginUrl().getFile());
                         String targetName = modUpdate.downloadURL.substring(modUpdate.downloadURL.lastIndexOf('/'));
                         File targetFile = new File(origFile.getParentFile(), targetName);
@@ -71,6 +70,7 @@ final class UpdateAll {
                             setText(modUpdate, modUpdate.text + REQUIRE_RESTART_SUFFIX);
                         }
                         updatedMods.add(modId);
+                        cacheOk = false;
                         updateAllMonitor.setProgress(current, modUpdates.length);
                     }
                 } finally {
@@ -82,11 +82,12 @@ final class UpdateAll {
 
     private static ModUpdate[] cacheFrom;
     private static ModUpdate[] cacheTo;
+    private static boolean cacheOk = false;
 
     @Nullable
     public static ModUpdate[] getRealUpdates() {
         final ModUpdate[] modUpdates = ModUpdater.getUpdates();
-        if (modUpdates == cacheFrom) return cacheTo;
+        if (modUpdates == cacheFrom && cacheOk) return cacheTo;
         if (modUpdates == null || modUpdates.length == 0) return null;
         ArrayList<ModUpdate> realModUpdates = new ArrayList<>(modUpdates.length);
         for (ModUpdate modUpdate : modUpdates) {
@@ -103,6 +104,7 @@ final class UpdateAll {
         ModUpdate[] realModUpdatesArray = realModUpdates.toArray(new ModUpdate[0]);
         cacheFrom = modUpdates;
         cacheTo = realModUpdatesArray;
+        cacheOk = true;
         return realModUpdatesArray;
     }
 

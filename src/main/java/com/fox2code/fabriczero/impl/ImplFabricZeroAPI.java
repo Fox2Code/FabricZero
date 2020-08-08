@@ -18,7 +18,6 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.spongepowered.asm.transformers.MixinClassWriter;
-import org.spongepowered.asm.transformers.TreeTransformer;
 
 import java.io.*;
 import java.lang.management.ManagementFactory;
@@ -104,7 +103,8 @@ public final class ImplFabricZeroAPI implements FabricZeroAPI, Opcodes {
                 transformer.transform(classNode, name);
             }
         }
-        boolean dump = (name.startsWith("net.minecraft.") || name.startsWith("com.mojang.")) && isClassDumpingEnabled();
+        boolean minecraft = name.startsWith("net.minecraft.") || name.startsWith("com.mojang.");
+        boolean dump = minecraft && isClassDumpingEnabled();
         classNode.access = makePublic(classNode.access);
         if (!dump) classNode.invisibleAnnotations = null;
         for (MethodNode methodNode: classNode.methods) {
@@ -112,7 +112,7 @@ public final class ImplFabricZeroAPI implements FabricZeroAPI, Opcodes {
             if (!dump) methodNode.invisibleAnnotations = null;
         }
         for (FieldNode fieldNode: classNode.fields) {
-            fieldNode.access = makePublic(fieldNode.access);
+            if (minecraft) fieldNode.access = makePublic(fieldNode.access); // Fix https://github.com/Fox2Code/FabricZero/issues/4
             if (!dump) fieldNode.invisibleAnnotations = null;
         }
         BytecodeOptimizer.optimize(classNode);

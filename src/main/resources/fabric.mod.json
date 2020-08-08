@@ -40,8 +40,7 @@
   "custom": {
     "modupdater": {
       "strategy": "curseforge",
-      "owner": "Fox2Code",
-      "repository": "FabricZero",
+      "projectID": 400444,
       "strict": false
     }
   }

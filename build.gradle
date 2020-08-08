@@ -14,7 +14,16 @@ plugins {
     id 'maven-publish'
 }
 
-apply plugin: 'udk.base'
+allprojects {
+    configurations {
+        shadow
+    }
+    jar {
+        from {
+            configurations.shadow.collect { it.isDirectory() ? it : zipTree(it) }
+        }
+    }
+}
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
@@ -25,7 +34,6 @@ group = project.maven_group
 
 repositories {//
     maven { url 'https://maven.thebrokenrail.com' }
-    maven { url 'http://62.4.29.69/maven' }
 }
 
 dependencies {
@@ -48,6 +56,8 @@ dependencies {
     modRuntime "io.github.prospector:modmenu:$project.modmenu"
 
     compileOnly(project(":API")) { transitive = false }
+    compileOnly(project(":Special")) { transitive = false }
+    shadow(project(":Special")) { transitive = false }
     // PSA: Some older mods, compiled on Loom 0.2.1, might have outdated Maven POMs.
     // You may need to force-disable transitiveness on them.
 }
@@ -75,11 +85,17 @@ tasks.withType(JavaCompile) {
 // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
 // if it is present.
 // If you remove this task, sources will not be generated.
-/* UDK Already declare it
+
 task sourcesJar(type: Jar, dependsOn: classes) {
     classifier = "sources"
     from sourceSets.main.allSource
-}*/
+}
+
+compileJava {
+    doFirst {
+        new File("$project.buildDir/classes/java/main").mkdirs()
+    }
+}
 
 jar {
     from "LICENSE"

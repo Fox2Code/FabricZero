@@ -11,6 +11,9 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
 import java.util.Map;
@@ -18,8 +21,8 @@ import java.util.stream.Stream;
 
 @SuppressWarnings("ConstantConditions")
 @Mixin(LanguageManager.class)
-public class LanguageManagerMixin {
-    @Shadow
+public class LanguageManagerMixin { // WIP
+    /*@Shadow
     @Final
     private static LanguageDefinition field_25291;
     @Shadow
@@ -38,7 +41,7 @@ public class LanguageManagerMixin {
      * @author Fox2Code
      * @reason Mixin is shit
      */
-    @Overwrite
+    /*@Overwrite
     public void apply(ResourceManager manager) {
         this.languageDefs = method_29393(manager.streamResourcePacks());
         LanguageDefinition languageDefinition = this.languageDefs.getOrDefault("en_us", field_25291);
@@ -67,6 +70,11 @@ public class LanguageManagerMixin {
             I18nMixin.field_25290(translationStorage);
         }
         Language.setInstance(translationStorage);
+        System.gc(); // Memory Opt (This method is run just after resources reloading)
+    }*/
+
+    @Inject(method = "apply", at = @At("RETURN"))
+    public void initHook(ResourceManager manager, CallbackInfo ci) {
         System.gc(); // Memory Opt (This method is run just after resources reloading)
     }
 }
