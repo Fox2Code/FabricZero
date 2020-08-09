@@ -34,8 +34,6 @@ public final class FabricZeroPlugin implements IMixinConfigPlugin {
 
     static {
         try {
-
-            //File.class.getDeclaredField("separator").set();
             Field modField = net.fabricmc.loader.FabricLoader.class.getDeclaredField("modMap");
             Map<String, ModContainer> mods = (Map<String, ModContainer>)
                     ReflectUtil.forceGet(FabricLoader.getInstance(), modField);
@@ -48,27 +46,6 @@ public final class FabricZeroPlugin implements IMixinConfigPlugin {
             proxy = FabricZeroTransformerHook.hookFrom(proxy);
             ReflectedClass.of(FabricLauncherBase.getLauncher().getTargetClassLoader())
                     .get("delegate").set0("mixinTransformer", proxy);
-            ClassInfo.fromCache(""); // Force init of ClassInfo
-            Field ClassInfo_logger = ClassInfo.class.getDeclaredField("logger");
-            ReflectUtil.<Logger>forceReplace(null, ClassInfo_logger, o -> new LoggerWrapper(o) {
-                @Override
-                public void warn(String message, Object p0, Object p1, Object p2) {
-                    if (message.startsWith("Error loading class:")) {
-                        this.debug(message, p0, p1, p2);
-                    } else {
-                        super.warn(message, p0, p1, p2);
-                    }
-                }
-
-                @Override
-                public void warn(String message, Object... params) {
-                    if (message.startsWith("Error loading class:")) {
-                        this.debug(message, params);
-                    } else {
-                        super.warn(message, params);
-                    }
-                }
-            });
             LOGGER.info("FabricZero: Loaded!");
         } catch (ReflectiveOperationException e) {
             e.printStackTrace();
@@ -132,7 +109,7 @@ public final class FabricZeroPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        return MOD_UPDATER || !targetClassName.endsWith("_ModUpdater");
+        return MOD_UPDATER || !mixinClassName.endsWith("_ModUpdater");
     }
 
     @Override
