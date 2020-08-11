@@ -1,10 +1,6 @@
 package com.fox2code.fabriczero;
 
 import com.fox2code.fabriczero.api.FabricZeroAPI;
-import com.fox2code.fabriczero.reflectutils.ReflectUtil;
-import com.google.gson.Gson;
-
-import java.io.File;
 
 /**
  * This class combine all builtin rules of FabricZero for better editing

@@ -43,9 +43,6 @@ final class BytecodeOptimizer implements Opcodes {
                 classNode.name.startsWith("me/deftware/client/framework/main/bootstrap/");
         final boolean emcMarketAPI =
                 classNode.name.equals("emc/marketplace/api/MarketplaceAPI");
-        /* final boolean glStateManager = classNode.name.equals("net/minecraft/class_4493")
-                || classNode.name.equals("com/mojang/blaze3d/platform/GlStateManager")
-                || classNode.name.equals("com/mojang/blaze3d/systems/RenderSystem"); */
         for (MethodNode methodNode:classNode.methods) {
             for (AbstractInsnNode insnNode : methodNode.instructions.toArray()) {
                 AbstractInsnNode previous = insnNode.getPrevious();

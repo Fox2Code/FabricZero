@@ -2,7 +2,6 @@ package com.fox2code.fabriczero;
 
 import com.fox2code.fabriczero.api.FabricZeroAPI;
 import com.fox2code.fabriczero.api.FabricZeroTransformer;
-import com.fox2code.fabriczero.api.LoggerWrapper;
 import com.fox2code.fabriczero.impl.ModHideMap;
 import com.fox2code.fabriczero.reflectutils.ReflectUtil;
 import com.fox2code.fabriczero.reflectutils.ReflectedClass;
@@ -15,7 +14,6 @@ import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
-import org.spongepowered.asm.mixin.transformer.ClassInfo;
 import org.spongepowered.asm.mixin.transformer.FabricMixinTransformerProxy;
 
 import java.lang.reflect.Field;

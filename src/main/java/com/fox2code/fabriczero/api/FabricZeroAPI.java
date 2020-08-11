@@ -7,7 +7,6 @@ import java.io.File;
 
 public interface FabricZeroAPI {
     int FLAG_DIRTY = 0x80000;
-    String CMD_DELETE_FILE = "rm";
 
     static FabricZeroAPI getInstance() {
         return ImplFabricZeroAPI.INSTANCE;
