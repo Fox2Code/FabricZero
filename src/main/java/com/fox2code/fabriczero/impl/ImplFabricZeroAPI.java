@@ -48,6 +48,7 @@ public final class ImplFabricZeroAPI implements FabricZeroAPI, Opcodes {
     private File configFile;
     private File dumpDir;
     private Boolean dumpClasses;
+    private Boolean disableAccessMod;
 
     @Override
     public boolean isHidden(String mod, String cls) {
@@ -84,7 +85,7 @@ public final class ImplFabricZeroAPI implements FabricZeroAPI, Opcodes {
         });
     }
 
-    // removing ACC_DEPRECATED is just to reduce the game memory usage
+    // removing ACC_DEPRECATED is just to reduce potential the game memory usage
     private static final int MASK = ~(ACC_PRIVATE|ACC_PROTECTED|ACC_DEPRECATED);
 
     private static int makePublic(int access) {
@@ -103,16 +104,17 @@ public final class ImplFabricZeroAPI implements FabricZeroAPI, Opcodes {
                 transformer.transform(classNode, name);
             }
         }
-        boolean minecraft = name.startsWith("net.minecraft.") || name.startsWith("com.mojang.");
-        boolean dump = minecraft && isClassDumpingEnabled();
-        classNode.access = makePublic(classNode.access);
+        boolean minecraft = name.startsWith("net.minecraft.");
+        boolean dump = (minecraft || name.startsWith("com.mojang.")) && isClassDumpingEnabled();
+        boolean accMod = !isAccessModDisabled();
+        if (accMod) classNode.access = makePublic(classNode.access);
         if (!dump) classNode.invisibleAnnotations = null;
         for (MethodNode methodNode: classNode.methods) {
-            methodNode.access = makePublic(methodNode.access);
+            if (accMod) methodNode.access = makePublic(methodNode.access);
             if (!dump) methodNode.invisibleAnnotations = null;
         }
         for (FieldNode fieldNode: classNode.fields) {
-            if (minecraft) fieldNode.access = makePublic(fieldNode.access); // Fix https://github.com/Fox2Code/FabricZero/issues/4
+            if (minecraft && accMod) fieldNode.access = makePublic(fieldNode.access); // Fix https://github.com/Fox2Code/FabricZero/issues/4
             if (!dump) fieldNode.invisibleAnnotations = null;
         }
         BytecodeOptimizer.optimize(classNode);
@@ -200,5 +202,13 @@ public final class ImplFabricZeroAPI implements FabricZeroAPI, Opcodes {
             dumpClasses = FabricZeroConfig.dumpClasses;
         }
         return dumpClasses;
+    }
+
+    @Override
+    public boolean isAccessModDisabled() {
+        if (disableAccessMod == null) {
+            disableAccessMod = FabricZeroConfig.disableAccessMod;
+        }
+        return disableAccessMod;
     }
 }

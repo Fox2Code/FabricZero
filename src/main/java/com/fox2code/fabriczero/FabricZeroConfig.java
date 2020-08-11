@@ -7,7 +7,7 @@ import java.io.*;
 public class FabricZeroConfig {
     private static final File cfgFile = FabricZeroAPI.getInstance().getFabricZeroConfigFile();
     public static boolean dumpClasses = false;
-    public static boolean fastGui = false;
+    public static boolean disableAccessMod = false; // Implement https://github.com/Fox2Code/FabricZero/issues/5
 
     static {
         load();
@@ -27,8 +27,8 @@ public class FabricZeroConfig {
                         case "dump":
                             dumpClasses = Boolean.parseBoolean(value);
                             break;
-                        case "fastGui":
-                            fastGui = Boolean.parseBoolean(value);
+                        case "disableAccessMod":
+                            disableAccessMod = Boolean.parseBoolean(value);
                             break;
                     }
                 }
@@ -42,7 +42,7 @@ public class FabricZeroConfig {
         try (FileOutputStream fileOutputStream = new FileOutputStream(cfgFile)){
             PrintStream printStream = new PrintStream(fileOutputStream);
             printStream.println("dump="+dumpClasses);
-            printStream.println("fastGui="+fastGui);
+            printStream.println("disableAccessMod="+disableAccessMod);
             printStream.flush();
         } catch (IOException ioe) {
             FabricZeroPlugin.LOGGER.error("Couldn't write config!",ioe);

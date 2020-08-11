@@ -35,4 +35,6 @@ public interface FabricZeroAPI {
     File getFabricZeroConfigFile();
 
     boolean isClassDumpingEnabled();
+
+    boolean isAccessModDisabled();
 }
