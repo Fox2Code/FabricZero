@@ -1,5 +1,6 @@
 package com.fox2code.fabriczero.impl;
 
+import com.fox2code.fabriczero.FabricZeroConfig;
 import com.fox2code.fabriczero.api.FabricZeroAPI;
 import com.fox2code.fabriczero.reflectutils.ReflectUtil;
 import net.fabricmc.loader.api.FabricLoader;
@@ -14,6 +15,7 @@ final class BytecodeOptimizer implements Opcodes {
     static Field opcodeField;
     static boolean redirectGetConfigDir;
     static boolean redirectPrepareModInit;
+    private static final boolean replaceStringRedirect = !FabricZeroConfig.disableStringRedirect;
 
     static {
         try {
@@ -68,6 +70,14 @@ final class BytecodeOptimizer implements Opcodes {
                                 methodInsnNode.desc = "(Lnet/fabricmc/loader/FabricLoader;Ljava/io/File;Ljava/lang/Object;)V";
                                 setOpcode(methodInsnNode, INVOKESTATIC);
                             }
+                        } else if (replaceStringRedirect && owner.equals("java/lang/String")
+                                && !classNode.name.startsWith("org/apache/commons/") && !descriptor.equals("(CC)Ljava/lang/String;")
+                                && (name.equals("replace") || name.equals("replaceFirst") || name.equals("replaceAll"))) {
+                            setOpcode(methodInsnNode, INVOKESTATIC);
+                            methodInsnNode.desc = "(Ljava/lang/String;" + descriptor.substring(1);
+                            methodInsnNode.owner = name.equals("replace")
+                                    ? "com/fox2code/fabriczero/access/FastString"
+                                    : "org/apache/commons/lang3/StringUtils";
                         }
                     }
                         break;

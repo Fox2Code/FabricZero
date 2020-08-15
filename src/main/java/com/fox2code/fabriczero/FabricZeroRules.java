@@ -11,7 +11,7 @@ class FabricZeroRules {
         FabricZeroAPI api = FabricZeroAPI.getInstance();
         api.hideMod("optifabric", "me.shedaniel.rei.impl.");
         api.addCurseProjectId("adorn", 320215);
-        api.addCurseProjectId("appleskin", 248787);
+        api.addCurseProjectId("appleskin", 248787, false); // Fix https://github.com/Fox2Code/FabricZero/issues/7
         api.addCurseProjectId("aurora_keystrokes", 352659);
         api.addCurseProjectId("bedrockwaters", 396568);
         api.addCurseProjectId("betterdroppeditems", 350250);

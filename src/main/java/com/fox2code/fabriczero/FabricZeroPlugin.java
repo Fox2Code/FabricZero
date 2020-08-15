@@ -44,6 +44,7 @@ public final class FabricZeroPlugin implements IMixinConfigPlugin {
             proxy = FabricZeroTransformerHook.hookFrom(proxy);
             ReflectedClass.of(FabricLauncherBase.getLauncher().getTargetClassLoader())
                     .get("delegate").set0("mixinTransformer", proxy);
+            System.setProperty("io.netty.tryReflectionSetAccessible", "true");
             LOGGER.info("FabricZero: Loaded!");
         } catch (ReflectiveOperationException e) {
             e.printStackTrace();

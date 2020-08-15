@@ -23,6 +23,8 @@ public interface FabricZeroAPI {
 
     void addCurseProjectId(String mod,int projectId);
 
+    void addCurseProjectId(String mod,int projectId,boolean strict);
+
     byte[] transformClass(byte[] bytecode, String name);
 
     void addTransformer(FabricZeroTransformer transformer);

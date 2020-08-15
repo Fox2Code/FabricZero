@@ -7,6 +7,8 @@ import com.fox2code.fabriczero.api.FabricZeroTransformer;
 import com.fox2code.fabriczero.reflectutils.ReflectUtil;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.api.ModContainer;
+import net.fabricmc.loader.api.metadata.ModDependency;
 import net.fabricmc.loader.api.metadata.ModMetadata;
 import net.fabricmc.loader.launch.common.FabricLauncherBase;
 import org.objectweb.asm.ClassReader;
@@ -32,7 +34,7 @@ public final class ImplFabricZeroAPI implements FabricZeroAPI, Opcodes {
 
     public static final FabricZeroAPI INSTANCE = new ImplFabricZeroAPI();
     static final boolean DEV = FabricLauncherBase.getLauncher().isDevelopment();
-    static final boolean REDIRECT_UNSAFE = ReflectUtil.isInternalUnsafe();
+    static final boolean REDIRECT_UNSAFE = ReflectUtil.isInternalUnsafe() && !FabricZeroConfig.disableUnsafeRedirect;
     static final Remapper REDIRECT_UNSAFE_REMAPPER = new Remapper() {
         @Override
         public String map(String internalName) {
@@ -75,12 +77,27 @@ public final class ImplFabricZeroAPI implements FabricZeroAPI, Opcodes {
 
     @Override
     public void addCurseProjectId(String mod,final int projectId) {
+        ModContainer container = FabricLoader.getInstance().getModContainer(mod).orElse(null);
+        if (container == null) return;
+        boolean strict = false;
+        for (ModDependency modDependency : container.getMetadata().getDepends()) {
+            if (modDependency.getModId().equals("minecraft")) {
+                strict = true;
+                break;
+            }
+        }
+        addCurseProjectId(mod, projectId, strict);
+    }
+
+    @Override
+    public void addCurseProjectId(String mod,final int projectId,final boolean strict) {
         FabricLoader.getInstance().getModContainer(mod).ifPresent(modContainer -> {
             ModMetadata modMetadata = modContainer.getMetadata();
             if (!modMetadata.containsCustomValue("modupdater")) {
                 ReflectUtil.injectCustomValue(modMetadata, "modupdater",
                         "{\"strategy\": \"curseforge\"," +
-                        "\"projectID\": "+ projectId +"}");
+                        "\"projectID\": "+ projectId + "," +
+                        "\"strict\": "+strict+"}");
             }
         });
     }
