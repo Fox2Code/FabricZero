@@ -16,9 +16,7 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.commons.ClassRemapper;
 import org.objectweb.asm.commons.Remapper;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.FieldNode;
-import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.*;
 import org.spongepowered.asm.transformers.MixinClassWriter;
 
 import java.io.*;
@@ -165,6 +163,9 @@ public final class ImplFabricZeroAPI implements FabricZeroAPI, Opcodes {
         return classBytes;
     }
 
+    private static final String DCT_DESC_OLD = "(Lnet/minecraft/class_4587;Lnet/minecraft/class_327;Lnet/minecraft/class_5348;III)V";
+    private static final String DCT_DESC_NEW = "(Lnet/minecraft/class_4587;Lnet/minecraft/class_327;Lnet/minecraft/class_2561;III)V";
+
     @Override
     public boolean transformClassNode(ClassNode classNode) {
         String name = classNode.name.replace('/', '.');
@@ -185,6 +186,43 @@ public final class ImplFabricZeroAPI implements FabricZeroAPI, Opcodes {
         for (FieldNode fieldNode: classNode.fields) {
             if (minecraft && accMod) fieldNode.access = makePublic(fieldNode.access); // Fix https://github.com/Fox2Code/FabricZero/issues/4
             if (!dump) fieldNode.invisibleAnnotations = null;
+        }
+        if (classNode.name.equals("net/minecraft/class_332")) {
+            MethodNode drawCenteredText = null;
+            for (MethodNode methodNode:classNode.methods) {
+                if (methodNode.name.equals("method_27534")) {
+                    drawCenteredText = methodNode;
+                    break;
+                }
+            }
+            if (drawCenteredText != null && (drawCenteredText.desc.equals(DCT_DESC_OLD)
+                    || drawCenteredText.desc.equals(DCT_DESC_NEW))) {
+                String[] methods = new String[]{"method_27534", "method_27535"};
+                boolean modernize = drawCenteredText.desc.equals(DCT_DESC_OLD);
+                for (String method : methods) {
+                    MethodNode methodNode = new MethodNode(ACC_PUBLIC | (modernize ? ACC_STATIC : 0),
+                            method, modernize ? DCT_DESC_NEW : DCT_DESC_OLD, null, null);
+                    int i = modernize ? 0 : 1;
+                    if (modernize) {
+                        methodNode.instructions.add(new FieldInsnNode(GETSTATIC,
+                                "com/fox2code/fabriczero/access/Helper",
+                                "drawableHelper", "Lnet/minecraft/class_332;"));
+                    }
+                    methodNode.instructions.add(new VarInsnNode(ALOAD, i++));
+                    methodNode.instructions.add(new VarInsnNode(ALOAD, i++));
+                    methodNode.instructions.add(new VarInsnNode(ALOAD, i++));
+                    methodNode.instructions.add(new TypeInsnNode(CHECKCAST,
+                            modernize ? "net/minecraft/class_2561" : "net/minecraft/class_5348"));
+                    methodNode.instructions.add(new VarInsnNode(ILOAD, i++));
+                    methodNode.instructions.add(new VarInsnNode(ILOAD, i++));
+                    methodNode.instructions.add(new VarInsnNode(ILOAD, i));
+                    methodNode.instructions.add(new MethodInsnNode(modernize ? INVOKEVIRTUAL : INVOKESTATIC,
+                            "net/minecraft/class_332", method, modernize ? DCT_DESC_OLD : DCT_DESC_NEW, false));
+                    methodNode.instructions.add(new InsnNode(RETURN));
+                    classNode.methods.add(methodNode);
+                }
+            }
+            classNode.access |= FLAG_DIRTY;
         }
         BytecodeOptimizer.optimize(classNode);
         boolean dirty = (classNode.access & FLAG_DIRTY) != 0;

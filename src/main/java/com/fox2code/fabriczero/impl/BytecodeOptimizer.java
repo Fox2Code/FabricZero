@@ -182,18 +182,30 @@ final class BytecodeOptimizer implements Opcodes {
                             }
                         }
                         break;
-                    case IDIV: {
-                        switch (previous.getOpcode()) {
-                            case ICONST_2:
-                                setOpcode(previous, ICONST_1);
-                                setOpcode(insnNode, ISHR);
-                                break;
-                            case ICONST_4:
-                                setOpcode(previous, ICONST_2);
-                                setOpcode(insnNode, ISHR);
-                                break;
+                    case F2D:
+                        if (previous.getOpcode() == D2F) {
+                            methodNode.instructions.remove(previous);
+                            methodNode.instructions.remove(insnNode);
                         }
-                    }
+                        break;
+                    case D2F:
+                        if (previous.getOpcode() == F2D) {
+                            methodNode.instructions.remove(previous);
+                            methodNode.instructions.remove(insnNode);
+                        }
+                        break;
+                    case POP:
+                        if (previous.getOpcode() == DUP) {
+                            methodNode.instructions.remove(previous);
+                            methodNode.instructions.remove(insnNode);
+                        }
+                        break;
+                    case POP2:
+                        if (previous.getOpcode() == DUP2) {
+                            methodNode.instructions.remove(previous);
+                            methodNode.instructions.remove(insnNode);
+                        }
+                        break;
                     case INVOKESPECIAL:
                         if (emcMarketAPI) {
                             MethodInsnNode methodInsnNode = (MethodInsnNode) insnNode;
