@@ -1,5 +1,9 @@
 package com.fox2code.fabriczero.reflectutils;
 
+import net.fabricmc.loader.api.FabricLoader;
+import net.gudenau.minecraft.asm.impl.ReflectionHelper;
+
+import java.lang.invoke.MethodHandle;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -7,6 +11,7 @@ import java.util.Map;
 
 final class Java9Fix {
     private static final boolean java8 = System.getProperty("java.version").startsWith("1.");
+    private static final boolean gudASM = FabricLoader.getInstance().isModLoaded("gud_asm");
     private static final Object unsafe;
     private static final Method fieldOffset, fieldOffset2;
     private static final Method staticFieldBase;
@@ -20,16 +25,17 @@ final class Java9Fix {
     private static long moduleDescOpenOffset;
     static boolean internalUnsafe;
     static boolean fallBackMode;
-    static boolean useHax;
 
+    private static MethodHandle accessSetter;
     private static Field access;
     private static long accessOffset;
 
     static {
-        try {
-            SetAccessibleHax.test();
-            useHax = true;
-        } catch (Throwable ignored) {}
+        if (gudASM) {
+            try {
+                accessSetter = ReflectionHelper.findSetter(AccessibleObject.class, "override", boolean.class);
+            } catch (Exception ignored) {}
+        }
         try { // Try this once to see if we can do it sooner
             Class<?> cl = Class.forName("jdk.internal.reflect.Reflection");
             Field field = getFieldBypass(cl, "fieldFilterMap");
@@ -61,12 +67,7 @@ final class Java9Fix {
                     access.setBoolean(field, true);
                 }
             } catch (Exception e) {
-                try {
-                    SetAccessibleHax.setAccessible(field);
-                    useHax = true;
-                } catch (VerifyError verifyError) {
-                    AutoFixer.plzFixme();
-                }
+                AutoFixer.plzFixme();
             }
             _unsafe = field.get(null);
             unsafe = _unsafe;
@@ -86,9 +87,7 @@ final class Java9Fix {
                 setAccessibleHelper(fieldPutInt);
                 setAccessibleHelper(fieldPutObject);
             } catch (ReflectiveOperationException reflectiveOperationException) {
-                if (!useHax) {
-                    AutoFixer.plzFixme();
-                }
+                AutoFixer.plzFixme();
             }
         } catch (ReflectiveOperationException e) {
             throw new Error("Your JVM May be incompatible with FabricZero", e);
@@ -155,9 +154,13 @@ final class Java9Fix {
     }
 
     private static void setAccessibleHelper(AccessibleObject field) throws ReflectiveOperationException {
-        if (useHax) {
-            SetAccessibleHax.setAccessible(field);
-            return;
+        if (accessSetter != null) {
+            try {
+                accessSetter.invoke(field, true);
+            } catch (Throwable ignored) {}
+            if (field.isAccessible()) {
+                return;
+            }
         }
         try {
             field.setAccessible(true);
@@ -181,7 +184,11 @@ final class Java9Fix {
             setAccessibleHelper(field);
             return;
         }
-        fieldPutBool.invoke(unsafe, field, accessOffset, true);
+        if (fieldPutBool != null) {
+            fieldPutBool.invoke(unsafe, field, accessOffset, true);
+        } else {
+            field.setAccessible(true);
+        }
     }
 
     public static void setBoolean(Object obj, Field field, boolean value) throws ReflectiveOperationException {

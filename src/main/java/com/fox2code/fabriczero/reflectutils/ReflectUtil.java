@@ -4,7 +4,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import net.fabricmc.loader.api.metadata.CustomValue;
 import net.fabricmc.loader.api.metadata.ModMetadata;
-import net.fabricmc.loader.metadata.ModMetadataV1;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.*;
@@ -17,6 +16,8 @@ public class ReflectUtil {
     private static final JsonParser jsonParser = new JsonParser();
     private static Field enumConstantDirectory;
     private static final boolean ModMetadata_getCustomValues;
+    private static Class<?> modMetadataV1 = null;
+    private static Class<?> modMetadataV1$CustomValueContainer = null;
 
     static {
         try {
@@ -29,6 +30,18 @@ public class ReflectUtil {
             tmp = true;
         } catch (Exception e) {
             tmp = false;
+        }
+        try {
+            modMetadataV1 = Class.forName("net.fabricmc.loader.metadata.ModMetadataV1");
+        } catch (ClassNotFoundException e) {
+            try {
+                modMetadataV1 = Class.forName("net.fabricmc.loader.metadata.V1ModMetadata");
+            } catch (ClassNotFoundException ignored) {}
+        }
+        if (modMetadataV1 != null) {
+            try {
+                modMetadataV1$CustomValueContainer = Class.forName(modMetadataV1.getName()+"$CustomValueContainer");
+            } catch (Exception ignored) {}
         }
         ModMetadata_getCustomValues = tmp;
     }
@@ -136,6 +149,7 @@ public class ReflectUtil {
 
     private static Field ModMetadataV1_custom = null;
     private static Field CustomValueContainer_customValues = null;
+    private static Field ModMetadataV1_customValues = null;
 
     @SuppressWarnings("unchecked")
     public static void injectCustomValue(ModMetadata modMetadata, String key, String value) {
@@ -144,12 +158,12 @@ public class ReflectUtil {
             if (map == Collections.EMPTY_MAP) {
                 try {
                     if (ModMetadataV1_custom == null) {
-                        ModMetadataV1_custom = ModMetadataV1.class.getDeclaredField("custom");
+                        ModMetadataV1_custom = modMetadataV1.getDeclaredField("custom");
                         Java9Fix.setAccessible(ModMetadataV1_custom);
                     }
                     if (CustomValueContainer_customValues == null) {
                         CustomValueContainer_customValues =
-                                ModMetadataV1.CustomValueContainer.class.getDeclaredField("customValues");
+                                modMetadataV1$CustomValueContainer.getDeclaredField("customValues");
                         Java9Fix.setAccessible(CustomValueContainer_customValues);
                     }
                     forceSet(forceGet(modMetadata, ModMetadataV1_custom),
@@ -163,7 +177,7 @@ public class ReflectUtil {
             map.put(key, ReflectUtil.cvFromJson(value));
         } else try {
             if (ModMetadataV1_custom == null) {
-                ModMetadataV1_custom = ModMetadataV1.class.getDeclaredField("custom");
+                ModMetadataV1_custom = modMetadataV1.getDeclaredField("custom");
                 Java9Fix.setAccessible(ModMetadataV1_custom);
             }
             ((Map<String, JsonElement>)ModMetadataV1_custom.get(modMetadata))

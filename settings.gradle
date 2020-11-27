@@ -8,6 +8,4 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
-include 'API'
-include 'Special'
 

@@ -116,40 +116,22 @@ public final class ImplFabricZeroAPI implements FabricZeroAPI, Opcodes {
         ClassReader classReader = new ClassReader(bytecode);
         ClassNode classNode = new ClassNode();
         classReader.accept(classNode, ClassReader.EXPAND_FRAMES);
-        for (FabricZeroTransformer transformer:transformers) {
-            if (!name.startsWith(transformer.getClass().getPackage().getName())) {
-                transformer.transform(classNode, name);
-            }
-        }
         boolean minecraft = name.startsWith("net.minecraft.");
         boolean dump = (minecraft || name.startsWith("com.mojang.")) && isClassDumpingEnabled();
-        boolean accMod = !isAccessModDisabled();
-        if (accMod) classNode.access = makePublic(classNode.access);
-        if (!dump) classNode.invisibleAnnotations = null;
-        for (MethodNode methodNode: classNode.methods) {
-            if (accMod) methodNode.access = makePublic(methodNode.access);
-            if (!dump) methodNode.invisibleAnnotations = null;
-        }
-        for (FieldNode fieldNode: classNode.fields) {
-            if (minecraft && accMod) fieldNode.access = makePublic(fieldNode.access); // Fix https://github.com/Fox2Code/FabricZero/issues/4
-            if (!dump) fieldNode.invisibleAnnotations = null;
-        }
-        BytecodeOptimizer.optimize(classNode);
+        boolean dirty = this.transformClassNode(classNode);
         // Do not recalculate frames on unmodified classes to improve performances
         byte[] classBytes;
         ClassWriter classWriter;
         if (VERIFY_NONE) {
-            classNode.access &=~ FLAG_DIRTY;
             // We always parse COMPUTE_MAXS when VERIFY_NONE is enabled to partially replace VM verification
             // In a no-verify env ClassWriter.COMPUTE_FRAMES are not necessary
             classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_MAXS);
-        } else if ((classNode.access & FLAG_DIRTY) != 0) {
-            classNode.access &=~ FLAG_DIRTY;
+        } else if (dirty) {
             classWriter = new MixinClassWriter(classReader, ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         } else {
             classWriter = new ClassWriter(classReader, 0);
         }
-        if (REDIRECT_UNSAFE) {
+        if (REDIRECT_UNSAFE && !classNode.name.startsWith("net/gudenau/minecraft/asm/")) {
             classNode.accept(new ClassRemapper(classWriter, REDIRECT_UNSAFE_REMAPPER));
         } else {
             classNode.accept(classWriter);
@@ -181,6 +163,33 @@ public final class ImplFabricZeroAPI implements FabricZeroAPI, Opcodes {
             }
         }
         return classBytes;
+    }
+
+    @Override
+    public boolean transformClassNode(ClassNode classNode) {
+        String name = classNode.name.replace('/', '.');
+        for (FabricZeroTransformer transformer:transformers) {
+            if (!name.startsWith(transformer.getClass().getPackage().getName())) {
+                transformer.transform(classNode, name);
+            }
+        }
+        boolean minecraft = name.startsWith("net.minecraft.");
+        boolean dump = (minecraft || name.startsWith("com.mojang.")) && isClassDumpingEnabled();
+        boolean accMod = !isAccessModDisabled();
+        if (accMod) classNode.access = makePublic(classNode.access);
+        if (!dump) classNode.invisibleAnnotations = null;
+        for (MethodNode methodNode: classNode.methods) {
+            if (accMod) methodNode.access = makePublic(methodNode.access);
+            if (!dump) methodNode.invisibleAnnotations = null;
+        }
+        for (FieldNode fieldNode: classNode.fields) {
+            if (minecraft && accMod) fieldNode.access = makePublic(fieldNode.access); // Fix https://github.com/Fox2Code/FabricZero/issues/4
+            if (!dump) fieldNode.invisibleAnnotations = null;
+        }
+        BytecodeOptimizer.optimize(classNode);
+        boolean dirty = (classNode.access & FLAG_DIRTY) != 0;
+        if (dirty) classNode.access &=~ FLAG_DIRTY;
+        return dirty;
     }
 
     @Override

@@ -27,6 +27,9 @@
     ],
     "modupdater": [
       "com.fox2code.fabriczero.mod.FabricZeroModUpdater"
+    ],
+    "gud_asm": [
+      "com.fox2code.fabriczero.FabricZeroTransformerASM"
     ]
   },
   "mixins": [

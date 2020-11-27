@@ -2,6 +2,7 @@ package com.fox2code.fabriczero.api;
 
 import com.fox2code.fabriczero.impl.ImplFabricZeroAPI;
 import net.fabricmc.api.EnvType;
+import org.objectweb.asm.tree.ClassNode;
 
 import java.io.File;
 
@@ -26,6 +27,8 @@ public interface FabricZeroAPI {
     void addCurseProjectId(String mod,int projectId,boolean strict);
 
     byte[] transformClass(byte[] bytecode, String name);
+
+    boolean transformClassNode(ClassNode bytecode);
 
     void addTransformer(FabricZeroTransformer transformer);
 

@@ -24,9 +24,14 @@ public class UpdateAllButton extends ButtonWidget {
     @Override
     public void render(MatrixStack matrices, int mouseX, int mouseY, float delta) {
         if (this.visible) {
-            final ModUpdate[] modUpdates = UpdateAll.getRealUpdates();
-            this.active = modUpdates != null && modUpdates.length != 0;
-            super.render(matrices, mouseX, mouseY, delta);
+            try {
+                final ModUpdate[] modUpdates = UpdateAll.getRealUpdates();
+                this.active = modUpdates != null && modUpdates.length != 0;
+                super.render(matrices, mouseX, mouseY, delta);
+            } catch (Throwable t) {
+                t.printStackTrace();
+                this.visible = false;
+            }
         }
     }
 }

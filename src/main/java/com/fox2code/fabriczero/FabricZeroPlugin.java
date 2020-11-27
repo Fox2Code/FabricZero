@@ -24,6 +24,7 @@ import java.util.Set;
 @SuppressWarnings("unchecked")
 public final class FabricZeroPlugin implements IMixinConfigPlugin {
     public static final boolean MOD_UPDATER = FabricLoader.getInstance().isModLoaded("modupdater");
+    private static final boolean GUD_ASM = FabricLoader.getInstance().isModLoaded("gud_asm");
     // It's looks like Graou ate the service.
 
     public static final Logger LOGGER = LogManager.getLogger("FabricZero");
@@ -38,12 +39,14 @@ public final class FabricZeroPlugin implements IMixinConfigPlugin {
             mods = new ModHideMap(mods);
             ReflectUtil.forceSet(FabricLoader.getInstance(), modField, mods);
             FabricZeroRules.builtIn();
-            FabricMixinTransformerProxy proxy = (FabricMixinTransformerProxy)
-                    ReflectedClass.of(FabricLauncherBase.getLauncher().getTargetClassLoader())
-                    .get("delegate").get0("mixinTransformer");
-            proxy = FabricZeroTransformerHook.hookFrom(proxy);
-            ReflectedClass.of(FabricLauncherBase.getLauncher().getTargetClassLoader())
-                    .get("delegate").set0("mixinTransformer", proxy);
+            if (!GUD_ASM) { // Use gudASM if present
+                FabricMixinTransformerProxy proxy = (FabricMixinTransformerProxy)
+                        ReflectedClass.of(FabricLauncherBase.getLauncher().getTargetClassLoader())
+                                .get("delegate").get0("mixinTransformer");
+                proxy = FabricZeroTransformerHook.hookFrom(proxy);
+                ReflectedClass.of(FabricLauncherBase.getLauncher().getTargetClassLoader())
+                        .get("delegate").set0("mixinTransformer", proxy);
+            }
             System.setProperty("io.netty.tryReflectionSetAccessible", "true");
             LOGGER.info("FabricZero: Loaded!");
         } catch (ReflectiveOperationException e) {

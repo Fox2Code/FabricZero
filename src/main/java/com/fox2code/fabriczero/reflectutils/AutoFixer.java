@@ -26,7 +26,7 @@ final class AutoFixer {
             FabricZeroPlugin.LOGGER.error("AutoFixer is not compatible with MultiMC at the moment!");
             FabricZeroPlugin.LOGGER.info("Here how to fix FabricZero manually on MultiMC");
             FabricZeroPlugin.LOGGER.info("Open your launcher -> Settings -> Java");
-            FabricZeroPlugin.LOGGER.info("And add \"-Xverify:none --add-opens java.base/jdk.internal.misc=ALL-UNNAMED --add-opens java.base/jdk.internal.vm.annotation=ALL-UNNAMED\"");
+            FabricZeroPlugin.LOGGER.info("And add \"--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/jdk.internal.misc=ALL-UNNAMED --add-opens java.base/jdk.internal.vm.annotation=ALL-UNNAMED\"");
             FabricZeroPlugin.LOGGER.info("into the JVM arguments");
             System.exit(-1);
         } catch (Exception ignored) {}
@@ -41,7 +41,8 @@ final class AutoFixer {
             if (i == -1) {
                 i = args.indexOf("-cp");
             }
-            args.addAll(i, Arrays.asList("-Xverify:none",
+            args.addAll(i, Arrays.asList(
+                    "--add-opens", "java.base/java.lang=ALL-UNNAMED",
                     "--add-opens", "java.base/jdk.internal.misc=ALL-UNNAMED",
                     "--add-opens", "java.base/jdk.internal.vm.annotation=ALL-UNNAMED"));
         } catch (Throwable t) {
