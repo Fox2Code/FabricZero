@@ -215,8 +215,10 @@ final class Java9Fix {
     public static void openModule(Class<?> cl) throws ReflectiveOperationException {
         if (!java8 && fieldGetObject != null) {
             Object tmp = getModule.invoke(cl);
-            tmp = fieldGetObject.invoke(unsafe, tmp, moduleDescOffset);
-            fieldPutBool.invoke(unsafe, tmp, moduleDescOpenOffset, true);
+            if (tmp != null) {
+                tmp = fieldGetObject.invoke(unsafe, tmp, moduleDescOffset);
+                fieldPutBool.invoke(unsafe, tmp, moduleDescOpenOffset, true);
+            }
         }
     }
 
