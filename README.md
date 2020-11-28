@@ -8,7 +8,7 @@ Compatibility and performance enhancement mod
 - Disable Java9+ reflections restrictions.  
   Some mods are now compatible with Java9+ because some mods use reflection
   and fail to boot because of these restrictions.
-  FabricZero require `-Xverify:none` to launch on Java9+
+  FabricZero require `--add-opens java.base/java.lang.reflect=ALL-UNNAMED` to launch on Java9+
 
 - Fix crash with many mods.  
   Note: This mod does patches that can help any mod to be compatible but do not guarantee a 100%

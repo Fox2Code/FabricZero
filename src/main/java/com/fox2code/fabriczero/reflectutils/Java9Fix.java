@@ -134,7 +134,8 @@ final class Java9Fix {
         } catch (Throwable ignored) {}
     }
 
-    private static Field getFieldBypass(Class<?> cls,String fieldName) throws ReflectiveOperationException {
+    @SuppressWarnings("JavaReflectionMemberAccess")
+    private static Field getFieldBypass(Class<?> cls, String fieldName) throws ReflectiveOperationException {
         Field[] fields;
         try {
             Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
