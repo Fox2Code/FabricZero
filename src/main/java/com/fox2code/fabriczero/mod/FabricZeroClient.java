@@ -1,5 +1,6 @@
 package com.fox2code.fabriczero.mod;
 
+import com.fox2code.fabriczero.access.MCResources;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -50,5 +51,8 @@ public class FabricZeroClient implements ClientModInitializer {
         };
         asyncLoader.setDaemon(true);
         asyncLoader.start();
+        if (!MCResources.successful) {
+            FabricZero.LOGGER.warn("Failed to setup vanilla metadata protector!");
+        }
     }
 }

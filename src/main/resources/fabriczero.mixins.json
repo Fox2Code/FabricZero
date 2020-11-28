@@ -5,10 +5,10 @@
   "compatibilityLevel": "JAVA_8",
   "plugin": "com.fox2code.fabriczero.FabricZeroPlugin",
   "mixins": [
+    "DefaultResourcePackMixin",
+    "ResourcePackProfileMixin"
   ],
   "client": [
-    "I18nMixin",
-    "LanguageManagerMixin",
     "ModUpdaterScreenMixin_ModUpdater"
   ],
   "injectors": {

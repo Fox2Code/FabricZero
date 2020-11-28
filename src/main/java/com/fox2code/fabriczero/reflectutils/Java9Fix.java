@@ -34,7 +34,7 @@ final class Java9Fix {
         if (gudASM) {
             try {
                 accessSetter = ReflectionHelper.findSetter(AccessibleObject.class, "override", boolean.class);
-            } catch (Exception ignored) {}
+            } catch (Throwable ignored) {}
         }
         try { // Try this once to see if we can do it sooner
             Class<?> cl = Class.forName("jdk.internal.reflect.Reflection");
