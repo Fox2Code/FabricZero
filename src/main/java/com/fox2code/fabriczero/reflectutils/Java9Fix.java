@@ -1,6 +1,7 @@
 package com.fox2code.fabriczero.reflectutils;
 
-import net.fabricmc.loader.api.FabricLoader;
+import io.github.karlatemp.unsafeaccessor.Root;
+import io.github.karlatemp.unsafeaccessor.Unsafe;
 import net.gudenau.minecraft.asm.impl.ReflectionHelper;
 
 import java.lang.invoke.MethodHandle;
@@ -11,7 +12,7 @@ import java.util.Map;
 
 final class Java9Fix {
     private static final boolean java8 = System.getProperty("java.version").startsWith("1.");
-    private static final boolean gudASM = FabricLoader.getInstance().isModLoaded("gud_asm");
+    private static final boolean gudASM = false;
     private static final Object unsafe;
     private static final Method fieldOffset, fieldOffset2;
     private static final Method staticFieldBase;
@@ -24,6 +25,7 @@ final class Java9Fix {
     private static long moduleDescOffset;
     private static long moduleDescOpenOffset;
     static boolean internalUnsafe;
+    static boolean libUnsafe;
     static boolean fallBackMode;
 
     private static MethodHandle accessSetter;
@@ -53,7 +55,7 @@ final class Java9Fix {
                 unsafeClass = Class.forName("sun.misc.Unsafe");
             }
             Field field = unsafeClass.getDeclaredField("theUnsafe");
-            Object _unsafe;
+            Object _unsafe = null;
             try {
                 try {
                     setAccessibleHelper(field);
@@ -67,9 +69,18 @@ final class Java9Fix {
                     access.setBoolean(field, true);
                 }
             } catch (Exception e) {
-                AutoFixer.plzFixme();
+                try { // Avoid AutoFixer if possible
+                    _unsafe = Unsafe.getUnsafe();
+                    unsafeClass = Unsafe.class;
+                    internalUnsafe = false;
+                    libUnsafe = true;
+                } catch (Throwable t) {
+                    AutoFixer.plzFixme();
+                }
             }
-            _unsafe = field.get(null);
+            if (_unsafe == null) {
+                _unsafe = field.get(null);
+            }
             unsafe = _unsafe;
             fieldOffset = unsafeClass.getDeclaredMethod("objectFieldOffset", Field.class);
             fieldOffset2 = unsafeClass.getDeclaredMethod("staticFieldOffset", Field.class);
@@ -88,6 +99,9 @@ final class Java9Fix {
                 setAccessibleHelper(fieldPutObject);
             } catch (ReflectiveOperationException reflectiveOperationException) {
                 AutoFixer.plzFixme();
+            }
+            if (access != null && !access.isAccessible()) {
+                setAccessibleHelper(access);
             }
         } catch (ReflectiveOperationException e) {
             throw new Error("Your JVM May be incompatible with FabricZero", e);
@@ -155,6 +169,14 @@ final class Java9Fix {
     }
 
     private static void setAccessibleHelper(AccessibleObject field) throws ReflectiveOperationException {
+        if (access != null && access.isAccessible()) {
+            try {
+                access.setBoolean(field, true);
+            } catch (Throwable ignored) {}
+            if (field.isAccessible()) {
+                return;
+            }
+        }
         if (accessSetter != null) {
             try {
                 accessSetter.invoke(field, true);
@@ -166,8 +188,7 @@ final class Java9Fix {
         try {
             field.setAccessible(true);
         } catch (Exception e) {
-            Method.class.getMethod("invoke", Object.class, Object[].class).invoke(
-                    Field.class.getMethod("setAccessible", boolean.class), field, new Object[]{true});
+            Root.setAccessible(field, true);
         }
     }
 

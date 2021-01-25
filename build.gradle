@@ -1,28 +1,6 @@
-buildscript {
-    repositories {
-        maven {
-            url 'http://62.4.29.69/maven'
-        }
-    }
-    dependencies {
-        classpath 'com.fox2code:udk:1.3.4'
-    }
-}
-
 plugins {
     id 'fabric-loom' version '0.5-SNAPSHOT'
     id 'maven-publish'
-}
-
-allprojects {
-    configurations {
-        shadow
-    }
-    jar {
-        from {
-            configurations.shadow.collect { it.isDirectory() ? it : zipTree(it) }
-        }
-    }
 }
 
 sourceCompatibility = 1.8
@@ -33,8 +11,13 @@ version = project.mod_version
 group = project.maven_group
 
 repositories {//
+    jcenter()
     maven { url 'https://maven.thebrokenrail.com' }
     maven { url 'https://maven.dblsaiko.net' }
+}
+
+configurations {
+    shadow
 }
 
 dependencies {
@@ -59,6 +42,9 @@ dependencies {
 
     modCompileOnly "io.github.prospector:modmenu:$project.modmenu"
     modRuntime "io.github.prospector:modmenu:$project.modmenu"
+
+    implementation("io.github.karlatemp:unsafe-accessor:1.2.2")
+    shadow("io.github.karlatemp:unsafe-accessor:1.2.2")
 
     // PSA: Some older mods, compiled on Loom 0.2.1, might have outdated Maven POMs.
     // You may need to force-disable transitiveness on them.
@@ -101,6 +87,14 @@ compileJava {
 
 jar {
     from "LICENSE"
+}
+
+afterEvaluate {
+    jar {
+        from {
+            configurations.shadow.collect { it.isDirectory() ? it : zipTree(it) }
+        }
+    }
 }
 
 // configure the maven publication

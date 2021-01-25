@@ -33,11 +33,19 @@ public final class ImplFabricZeroAPI implements FabricZeroAPI, Opcodes {
     public static final FabricZeroAPI INSTANCE = new ImplFabricZeroAPI();
     static final boolean DEV = FabricLauncherBase.getLauncher().isDevelopment();
     static final boolean REDIRECT_UNSAFE = ReflectUtil.isInternalUnsafe() && !FabricZeroConfig.disableUnsafeRedirect;
+    static final boolean REDIRECT_LIB_UNSAFE = ReflectUtil.isLibUnsafe() && !FabricZeroConfig.disableUnsafeRedirect;
     static final Remapper REDIRECT_UNSAFE_REMAPPER = new Remapper() {
         @Override
         public String map(String internalName) {
             return internalName.equals("sun/misc/Unsafe")?
                     "jdk/internal/misc/Unsafe":internalName;
+        }
+    };
+    static final Remapper REDIRECT_UNSAFE_REMAPPER_LIB = new Remapper() {
+        @Override
+        public String map(String internalName) {
+            return internalName.equals("sun/misc/Unsafe")?
+                    "io/github/karlatemp/unsafeaccessor/Unsafe":internalName;
         }
     };
     static final EnvType ENV_TYPE = FabricLauncherBase.getLauncher().getEnvironmentType();
@@ -110,7 +118,8 @@ public final class ImplFabricZeroAPI implements FabricZeroAPI, Opcodes {
     @Override
     public byte[] transformClass(byte[] bytecode, String name) {
         if (bytecode == null) return null;
-        if (name.startsWith("com.fox2code.fabriczero.")) return bytecode;
+        if (name.startsWith("com.fox2code.fabriczero.") ||
+                name.startsWith("io.github.karlatemp.unsafeaccessor.")) return bytecode;
         ClassReader classReader = new ClassReader(bytecode);
         ClassNode classNode = new ClassNode();
         classReader.accept(classNode, ClassReader.EXPAND_FRAMES);
@@ -129,7 +138,10 @@ public final class ImplFabricZeroAPI implements FabricZeroAPI, Opcodes {
         } else {
             classWriter = new ClassWriter(classReader, 0);
         }
-        if (REDIRECT_UNSAFE && !classNode.name.startsWith("net/gudenau/minecraft/asm/")) {
+        if (REDIRECT_LIB_UNSAFE && !classNode.name.startsWith("io/github/karlatemp/unsafeaccessor/")) {
+            classNode.accept(new ClassRemapper(classWriter, REDIRECT_UNSAFE_REMAPPER_LIB));
+        } else if (REDIRECT_UNSAFE && !classNode.name.startsWith("net/gudenau/minecraft/asm/")
+                && !classNode.name.startsWith("io/github/karlatemp/unsafeaccessor/")) {
             classNode.accept(new ClassRemapper(classWriter, REDIRECT_UNSAFE_REMAPPER));
         } else {
             classNode.accept(classWriter);

@@ -2,6 +2,7 @@ package com.fox2code.fabriczero.reflectutils;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import io.github.karlatemp.unsafeaccessor.Root;
 import net.fabricmc.loader.api.metadata.CustomValue;
 import net.fabricmc.loader.api.metadata.ModMetadata;
 import org.jetbrains.annotations.Nullable;
@@ -192,10 +193,18 @@ public class ReflectUtil {
         if (cls.isInterface()) {
             throw new IllegalArgumentException("Can't allocate interface instance!");
         }
-        return Java9Fix.allocateInstance(cls);
+        try {
+            return Java9Fix.allocateInstance(cls);
+        } catch (ReflectiveOperationException e) {
+            return Root.allocate(cls);
+        }
     }
 
     public static boolean isInternalUnsafe() {
+        return Java9Fix.internalUnsafe;
+    }
+
+    public static boolean isLibUnsafe() {
         return Java9Fix.internalUnsafe;
     }
 

@@ -89,12 +89,6 @@ final class BytecodeOptimizer implements Opcodes {
                                 methodInsnNode.owner = "com/fox2code/fabriczero/access/emc/EMCCompact";
                             }
                         }
-                        InsnList insnList = inline0((MethodInsnNode) insnNode, mathHelper);
-                        if (insnList != null) {
-                            methodNode.instructions.insertBefore(insnNode, insnList);
-                            methodNode.instructions.remove(insnNode);
-                            markDirty(classNode); // We touched it so we must call this method
-                        }
                         break;
                     case INVOKEDYNAMIC:
                         InvokeDynamicInsnNode dynamicInsnNode = (InvokeDynamicInsnNode) insnNode;
@@ -119,32 +113,7 @@ final class BytecodeOptimizer implements Opcodes {
                         }
                         break;
                     case Opcodes.LDC:
-                        if (mathHelper) {
-                            LdcInsnNode ldcInsnNode = (LdcInsnNode) insnNode;
-                            if (ldcInsnNode.cst instanceof Integer) {
-                                switch ((Integer) ldcInsnNode.cst) {
-                                    default:
-                                        break;
-                                    case 65536:
-                                        ldcInsnNode.cst = 32768;
-                                        break;
-                                    case 65535:
-                                        ldcInsnNode.cst = 32767;
-                                }
-
-                            } else if (ldcInsnNode.cst instanceof Double && (Double) ldcInsnNode.cst == 65536.0) {
-                                ldcInsnNode.cst = 32768.0;
-                            } else if (ldcInsnNode.cst instanceof Float) {
-                                float d = (Float) ldcInsnNode.cst;
-                                if (d == 65536F) {
-                                    ldcInsnNode.cst = 32768F;
-                                } else if (d == 10430.378F) {
-                                    ldcInsnNode.cst = 5215.189F;
-                                } else if (d == 16384.0F) {
-                                    ldcInsnNode.cst = 8192.0F;
-                                }
-                            }
-                        } else if (serverChunkManager) {
+                        if (serverChunkManager) {
                             LdcInsnNode ldcInsnNode = (LdcInsnNode) insnNode;
                             if (ldcInsnNode.cst instanceof Integer) {
                                 switch ((Integer) ldcInsnNode.cst) {
@@ -235,137 +204,6 @@ final class BytecodeOptimizer implements Opcodes {
         } catch (ReflectiveOperationException ignored) {}
     }
 
-    private static InsnList inline0(MethodInsnNode methodInsnNode, boolean mathHelper) {
-
-        final String owner = methodInsnNode.owner;
-        final String name = methodInsnNode.name;
-        final String descriptor = methodInsnNode.desc;
-        final boolean mathHelperCall = owner.equals("net/minecraft/class_3532")
-                || owner.equals("net/minecraft/util/math/MathHelper");
-        if (!owner.equals("java/lang/Math") && !owner.equals("java/lang/StrictMath") && !mathHelperCall) {
-            return null;
-        }
-        if (owner.equals("java/lang/Math") && (name.equals("sqrt") || name.equals("sin")
-                || name.equals("cos") || name.equals("asin") || name.equals("acos"))) {
-            methodInsnNode.owner = (name.equals("sin") || name.equals("cos")) && !mathHelper ?
-                    "com/fox2code/fabriczero/access/FastMath" : "java/lang/StrictMath";
-            return null;
-        }
-        InsnList insns = new InsnList();
-        if (descriptor.indexOf('I') != -1) {
-            switch (name) {
-                default:
-                    return null;
-                case "method_15382":
-                    if (!mathHelperCall) {
-                        return null;
-                    }
-                case "abs": {
-                    LabelNode label = new LabelNode();
-                    insns.add(new InsnNode(DUP));
-                    insns.add(new JumpInsnNode(IFGE, label));
-                    insns.add(new InsnNode(INEG));
-                    insns.add(label);
-                    break;
-                }
-                case "max": {
-                    LabelNode label = new LabelNode();
-                    insns.add(new InsnNode(DUP2));
-                    insns.add(new JumpInsnNode(IF_ICMPGE, label));
-                    insns.add(new InsnNode(SWAP));
-                    insns.add(label);
-                    insns.add(new InsnNode(POP));
-                    break;
-                }
-                case "min": {
-                    LabelNode label = new LabelNode();
-                    insns.add(new InsnNode(DUP2));
-                    insns.add(new JumpInsnNode(IF_ICMPLE, label));
-                    insns.add(new InsnNode(SWAP));
-                    insns.add(label);
-                    insns.add(new InsnNode(POP));
-                    break;
-                }
-            }
-        } else if (descriptor.indexOf('D') != -1) {
-            switch (name) {
-                default:
-                    return null;
-                case "toRadians":
-                    insns.add(new LdcInsnNode(180D));
-                    insns.add(new InsnNode(DDIV));
-                    insns.add(new LdcInsnNode(Math.PI));
-                    insns.add(new InsnNode(DMUL));
-                    break;
-                case "toDegrees":
-                    insns.add(new LdcInsnNode(180D));
-                    insns.add(new InsnNode(DMUL));
-                    insns.add(new LdcInsnNode(Math.PI));
-                    insns.add(new InsnNode(DDIV));
-                    break;
-                case "abs": {
-                    LabelNode label = new LabelNode();
-                    insns.add(new InsnNode(DUP2));
-                    insns.add(new InsnNode(DCONST_0));
-                    insns.add(new InsnNode(DCMPG));
-                    insns.add(new JumpInsnNode(IFGE, label));
-                    insns.add(new InsnNode(DNEG));
-                    insns.add(label);
-                    break;
-                }
-            }
-        } else if (descriptor.indexOf('F') != -1) {
-            switch (name) {
-                default:
-                    return null;
-                case "method_15379":
-                    if (!mathHelperCall) {
-                        return null;
-                    }
-                case "abs": {
-                    LabelNode label = new LabelNode();
-                    insns.add(new InsnNode(DUP));
-                    insns.add(new InsnNode(FCONST_0));
-                    insns.add(new InsnNode(FCMPG));
-                    insns.add(new JumpInsnNode(IFGE, label));
-                    insns.add(new InsnNode(FNEG));
-                    insns.add(label);
-                    break;
-                }
-                case "max": {
-                    LabelNode label = new LabelNode();
-                    insns.add(new InsnNode(DUP2));
-                    insns.add(new InsnNode(FCMPL));
-                    insns.add(new JumpInsnNode(IFGE, label));
-                    insns.add(new InsnNode(SWAP));
-                    insns.add(label);
-                    insns.add(new InsnNode(POP));
-                    break;
-                }
-                case "min": {
-                    LabelNode label = new LabelNode();
-                    insns.add(new InsnNode(DUP2));
-                    insns.add(new InsnNode(FCMPL));
-                    insns.add(new JumpInsnNode(IFLE, label));
-                    insns.add(new InsnNode(SWAP));
-                    insns.add(label);
-                    insns.add(new InsnNode(POP));
-                    break;
-                }
-                case "square":
-                case "method_27285":
-                    if (!mathHelperCall) {
-                        return null;
-                    }
-                    insns.add(new InsnNode(DUP));
-                    insns.add(new InsnNode(FMUL));
-                    break;
-            }
-        } else {
-            return null;
-        }
-        return insns;
-    }
     private static void markDirty(ClassNode classNode) {
         classNode.access |= FabricZeroAPI.FLAG_DIRTY;
     }

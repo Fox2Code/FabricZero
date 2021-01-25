@@ -24,7 +24,7 @@ import java.util.Set;
 @SuppressWarnings("unchecked")
 public final class FabricZeroPlugin implements IMixinConfigPlugin {
     public static final boolean MOD_UPDATER = FabricLoader.getInstance().isModLoaded("modupdater");
-    private static final boolean GUD_ASM = FabricLoader.getInstance().isModLoaded("gud_asm");
+    private static final boolean GUD_ASM = false;
     // It's looks like Graou ate the service.
 
     public static final Logger LOGGER = LogManager.getLogger("FabricZero");
@@ -32,6 +32,7 @@ public final class FabricZeroPlugin implements IMixinConfigPlugin {
     private static boolean init;
 
     static {
+        LOGGER.warn("FabricZero is in it's end of life, please consider stopping using it!");
         try {
             Field modField = net.fabricmc.loader.FabricLoader.class.getDeclaredField("modMap");
             Map<String, ModContainer> mods = (Map<String, ModContainer>)
